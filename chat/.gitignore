@@ -1,0 +1,36 @@
+# Python
+*.pyc
+*.pyo
+__pycache__
+
+# Django
+db.sqlite3
+*.log
+*.pot
+*.pyc
+*.pyo
+*.bak
+
+# Virtual environments
+venv/
+env/
+*.env
+
+# IDE and OS generated files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# Static and media files (optional, depends on your setup)
+static/
+media/
+
+# Coverage reports
+.coverage
+*.coveragerc
+
+# Django settings (if you keep sensitive settings separate, like `settings_local.py`)
+settings_local.py

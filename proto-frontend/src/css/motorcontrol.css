@@ -1,0 +1,520 @@
+:root {
+  --primary: #2c3e50;
+  --secondary: #34495e;
+  --accent: #3498db;
+  --bg: #ffffff;
+  --text: #2c3e50;
+  --danger: #e74c3c;
+  --success: #2ecc71;
+  --radius: 0px;
+  --shadow: 0 2px 3px rgba(0,0,0,0.1);
+}
+
+/* Custom Range Slider Styling */
+.slider-with-buttons input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 8px;
+  background: var(--secondary);
+  outline: none;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  border-radius: 4px;
+}
+
+.slider-with-buttons input[type="range"]:hover {
+  opacity: 1;
+}
+
+/* Webkit (Chrome, Safari, newer versions of Opera) */
+.slider-with-buttons input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: var(--accent);
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background 0.15s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider-with-buttons input[type="range"]::-webkit-slider-thumb:hover {
+  background: var(--primary);
+}
+
+/* Firefox */
+.slider-with-buttons input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: var(--accent);
+  cursor: pointer;
+  border-radius: 50%;
+  border: none;
+  transition: background 0.15s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider-with-buttons input[type="range"]::-moz-range-thumb:hover {
+  background: var(--primary);
+}
+
+/* Disabled Slider Styling */
+.slider-with-buttons input[type="range"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.slider-with-buttons input[type="range"]:disabled::-webkit-slider-thumb {
+  background: var(--secondary);
+  cursor: not-allowed;
+}
+
+.slider-with-buttons input[type="range"]:disabled::-moz-range-thumb {
+  background: var(--secondary);
+  cursor: not-allowed;
+}
+
+/* Focus States */
+.slider-with-buttons input[type="range"]:focus {
+  outline: none;
+}
+
+.slider-with-buttons input[type="range"]:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.4);
+}
+
+.slider-with-buttons input[type="range"]:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.4);
+}
+
+.motor-control-dashboard {
+  font-family: 'Inter', sans-serif;
+  color: var(--text);
+  margin: 0 auto;
+
+}
+
+.dashboard-header {
+  background: var(--primary);
+  color: white;
+  padding: 10px 12px;
+  border-radius: 0%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: min-content;
+  
+}
+
+#bootbuddne {
+  height: 10px;
+  width: 10px;
+  background-color: #0b253f;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.user-connection-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.connection-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.connection-indicator.connected .status-dot {
+  background-color: var(--success);
+}
+
+.connection-indicator.disconnected .status-dot {
+  background-color: var(--danger);
+}
+
+.dashboard-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 3px;
+}
+
+.metrics-panel {
+  grid-column: 1 / span 3;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+  padding-top: 6px;
+}
+div.metric-card {
+  background: white;
+  border-radius: var(--radius);
+  text-align: center;
+  box-shadow: var(--shadow);
+  padding: 1px;
+}
+
+.metric-card {
+  background: white;
+  border-radius: var(--radius);
+  text-align: center;
+  box-shadow: var(--shadow);
+  padding: 0px;
+}
+
+.metric-title {
+  font-size: 0.8rem;
+  color: var(--secondary);
+
+  font-weight: 600;
+}
+
+.metric-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.control-panel {
+  grid-column: 1 / span 3;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.control-section {
+  background: white;
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+
+  /* Positioning for bottom stickiness */
+  position: fixed;
+  bottom: 0;
+  left: 0;  /* Or right: 0;  or  width: 100%; if you want it full width */
+  width: 100%; /* Or specific width */
+  z-index: 1000; /* Ensure it's above other content */
+}
+
+
+.button-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+button
+{
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 8px 12px;
+  transition: background-color 0.3s;
+}
+
+.control-button {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s;
+}
+
+.control-button.primary {
+  background-color: var(--accent);
+  color: #3498db;
+}
+
+.control-button.danger {
+  background-color: var(--danger);
+  color: white;
+}
+
+.control-button.active {
+  
+  background-color: var(--secondary);
+  background-color: #164666;
+}
+
+.slider-control {
+  
+  margin-left: 16px;
+  width: 75%;
+  margin-bottom: 15px;
+  
+}
+
+.slider-header {
+  display: flex;
+  
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.slider-with-buttons {
+  display: flex;
+  align-items: center;
+  gap:105px;
+  /* width: 100%; This will make the slider as long as possible in the container */
+}
+
+.slider-with-buttons input[type="range"] {
+  flex-grow: 1; /* Important: This makes the slider take up all available space */
+  margin: 0 8px;
+  width: 100%; /* Ensures it fills the flex-grow space */
+}
+
+
+
+.decrement,
+.increment {
+  width: 50px;
+  height: 50px;
+  border: none;
+  background-color: var(--primary);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.visualization-panel {
+  background: white;
+  border-radius: var(--radius);
+  padding: 0px;
+  
+  grid-column: 1 / span 3; /* This is the important line */
+}
+
+.motion-container {
+  display: flex;
+  
+  border: 1px dashed var(--bg);
+  border-radius: var(--radius);
+  
+}
+
+.user-management-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.system-button {
+
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s;
+}
+
+.system-button.user {
+  background-color: var(--secondary);
+  color: white;
+}
+
+.system-button.logout {
+  background-color: var(--danger);
+  color: white;
+  grid-column: 1 / span 2;
+}
+
+.system-button.session {
+  background-color: var(--accent);
+  color: white;
+}
+
+#sessiondiv button {
+  margin: 5px 5px 5px 0;
+}
+
+
+
+#motion {
+    max-width: 30px;
+}
+#session-visualizer {
+  width: 100%;
+}
+
+body {
+  background-color: white;
+  margin: 0;
+  padding: 0;
+  border-radius: 0px;
+  min-height: 100vh;
+  margin-bottom: 0px;
+  
+}
+html {
+  border-radius: 0%;
+ 
+}
+
+/* Sensor Panel Styles */
+.sensor-panel {
+  background: white;
+  border-radius: var(--radius);
+  padding: 12px;
+  box-shadow: var(--shadow);
+  margin-top: 6px;
+  border-left: 3px solid var(--accent);
+}
+
+.sensor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.sensor-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.9rem;
+}
+
+.sensor-connection-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sensor-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.sensor-connection-indicator.connected .sensor-status-dot {
+  background-color: var(--success);
+}
+
+.sensor-connection-indicator.disconnected .sensor-status-dot {
+  background-color: var(--danger);
+}
+
+.sensor-connection-indicator.error .sensor-status-dot {
+  background-color: #f39c12;
+}
+
+.sensor-status-text {
+  font-size: 0.75rem;
+  color: var(--secondary);
+}
+
+.sensor-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.sensor-switch-btn {
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.sensor-switch-btn:hover:not(:disabled) {
+  background-color: var(--primary);
+}
+
+.sensor-switch-btn:disabled {
+  background-color: var(--secondary);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sensor-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.sensor-group {
+  background: #f8f9fa;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.sensor-group-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--secondary);
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.sensor-values {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sensor-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sensor-label {
+  font-size: 0.7rem;
+  color: var(--secondary);
+  font-weight: 500;
+}
+
+.sensor-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Responsive adjustments for sensor panel */
+@media (max-width: 768px) {
+  .sensor-metrics {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .sensor-panel {
+    padding: 8px;
+  }
+  
+  .sensor-values {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .sensor-metric {
+    flex: 1;
+    min-width: 80px;
+  }
+}
+

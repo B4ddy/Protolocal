@@ -1,0 +1,15 @@
+venv
+env
+.env
+Dockerfile
+*.pyc
+__pycache__/
+.git/
+.vscode/
+*.sqlite3
+*.db
+database_backup*
+node_modules/
+static/  # if you are collecting static files in the build
+media/ 
+proto-frontend/
