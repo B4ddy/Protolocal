@@ -7,7 +7,7 @@ from collections import deque
 from django.utils import timezone
 from django.db import transaction
 
-from ..models import sensordata, baseuser, protosession
+from ..models import SensorData, BaseUser, ProtoSession
 from asgiref.sync import sync_to_async
 
 # Try to import smbus2, fall back to simulation if not available
@@ -40,15 +40,15 @@ class SensorMonitor:
         else:
             self.hardware_mode = False
             
-        self.MPU_ADDR = 0x09
-        self.HX711_ADDR = 0x08
+        # Sensor addresses from demo script
+        self.A2_ADDR = 0x08  # Arduino 2
+        self.A3_ADDR = 0x10  # Arduino 3
         
         # Current sensor data storage
         self.sensor_data = {}
         
-        # Sensor identifiers for dual sensor support
-        self.sensor_ids = ['sensor_1', 'sensor_2']
-        self.current_sensor_id = 'sensor_1'
+        # Both sensors are always active
+        self.sensor_ids = ['A2', 'A3']
         
         # Database write configuration
         self.db_write_interval = 20 
@@ -84,20 +84,18 @@ class SensorMonitor:
     
     def simulate_sensor_data(self, addr, length):
         """Simulate sensor data for testing purposes"""
-        if addr == self.MPU_ADDR and length == 20:
-            # Simulate MPU6050 data (5 floats)
-            acc_x = random.uniform(-2.0, 2.0)
-            acc_y = random.uniform(-2.0, 2.0)
-            acc_z = random.uniform(8.0, 12.0)  # Gravity component
-            pitch = random.uniform(-45.0, 45.0)
-            roll = random.uniform(-45.0, 45.0)
-            return struct.pack('<fffff', acc_x, acc_y, acc_z, pitch, roll)
-        elif addr == self.HX711_ADDR and length == 10:
-            # Simulate HX711 + MPR121 data
-            gewicht_N = random.uniform(0.0, 100.0)
-            touchStatus = random.randint(0, 255)
-            griffhoehe = random.uniform(10.0, 50.0)
-            return struct.pack('<fHf', gewicht_N, touchStatus, griffhoehe)
+        if addr == self.A2_ADDR and length == 10:
+            # Simulate Arduino A2 sensor data (gewicht, touchstatus, griffhoehe)
+            gewicht_A2 = random.uniform(0.0, 150.0)
+            touchstatus_A2 = random.randint(0, 4095)  # 12-bit value
+            griffhoehe_A2 = random.uniform(5.0, 60.0)
+            return struct.pack('<fHf', gewicht_A2, touchstatus_A2, griffhoehe_A2)
+        elif addr == self.A3_ADDR and length == 10:
+            # Simulate Arduino A3 sensor data (gewicht, touchstatus, griffhoehe)
+            gewicht_A3 = random.uniform(0.0, 150.0)
+            touchstatus_A3 = random.randint(0, 4095)  # 12-bit value
+            griffhoehe_A3 = random.uniform(5.0, 60.0)
+            return struct.pack('<fHf', gewicht_A3, touchstatus_A3, griffhoehe_A3)
         else:
             # Return zeros for unknown addresses
             return bytes(length)
@@ -143,7 +141,7 @@ class SensorMonitor:
                             
                             # Write to DB if needed
                             if self.logging_bool and self.websocket_send_counter % self.db_write_frequency == 0:
-                                self.data_buffer.append({'data': sensor_data_copy, 'sensor_id': self.current_sensor_id})
+                                self.data_buffer.append({'data': sensor_data_copy})
                                 self.db_write_flag = True
                             
                             self.last_websocket_send_time = current_time
@@ -189,33 +187,31 @@ class SensorMonitor:
         sensor_data = {}
         
         try:
-            # Read MPU6050 data (5 floats = 20 bytes)
-            raw_mpu = self.read_floats(self.MPU_ADDR, 20)
-            if raw_mpu and len(raw_mpu) == 20:
-                acc_x, acc_y, acc_z, pitch, roll = struct.unpack('<fffff', raw_mpu)
+            # Read Arduino A2 sensor data (10 bytes)
+            raw_a2 = self.read_floats(self.A2_ADDR, 10)
+            if raw_a2 and len(raw_a2) == 10:
+                gewicht_A2, touchstatus_A2, griffhoehe_A2 = struct.unpack('<fHf', raw_a2)
                 sensor_data.update({
-                    'acc_x': round(acc_x, 2),
-                    'acc_y': round(acc_y, 2),
-                    'acc_z': round(acc_z, 2),
-                    'pitch': round(pitch, 2),
-                    'roll': round(roll, 2)
+                    'gewicht_A2': round(gewicht_A2, 2),
+                    'touchstatus_A2': touchstatus_A2,
+                    'griffhoehe_A2': round(griffhoehe_A2, 1)
                 })
-                logger.debug(f"MPU6050: aX={acc_x:.2f} m/s², aY={acc_y:.2f} m/s², aZ={acc_z:.2f} m/s² | Pitch={pitch:.2f}°, Roll={roll:.2f}°")
+                logger.debug(f"Arduino A2 → Weight: {gewicht_A2:.2f} N, Touch: {bin(touchstatus_A2)} ({touchstatus_A2}), Grip height: {griffhoehe_A2:.1f} cm")
             else:
-                logger.warning("Failed to read MPU6050 data")
+                logger.warning("Failed to read Arduino A2 data")
             
-            # Read HX711 + MPR121 data (10 bytes)
-            raw_hx = self.read_floats(self.HX711_ADDR, 10)
-            if raw_hx and len(raw_hx) == 10:
-                gewicht_N, touchStatus, griffhoehe = struct.unpack('<fHf', raw_hx)
+            # Read Arduino A3 sensor data (10 bytes)
+            raw_a3 = self.read_floats(self.A3_ADDR, 10)
+            if raw_a3 and len(raw_a3) == 10:
+                gewicht_A3, touchstatus_A3, griffhoehe_A3 = struct.unpack('<fHf', raw_a3)
                 sensor_data.update({
-                    'gewicht_N': round(gewicht_N, 2),
-                    'touch_status': touchStatus,
-                    'griffhoehe': round(griffhoehe, 1)
+                    'gewicht_A3': round(gewicht_A3, 2),
+                    'touchstatus_A3': touchstatus_A3,
+                    'griffhoehe_A3': round(griffhoehe_A3, 1)
                 })
-                logger.debug(f"HX711 → Weight: {gewicht_N:.2f} N, MPR121 → Grip height: {griffhoehe:.1f} cm")
+                logger.debug(f"Arduino A3 → Weight: {gewicht_A3:.2f} N, Touch: {bin(touchstatus_A3)} ({touchstatus_A3}), Grip height: {griffhoehe_A3:.1f} cm")
             else:
-                logger.warning("Failed to read HX711/MPR121 data")
+                logger.warning("Failed to read Arduino A3 data")
                 
         except Exception as e:
             logger.error(f"Error reading sensor data: {e}")
@@ -225,8 +221,7 @@ class SensorMonitor:
     def format_sensor_data_for_websocket(self, sensor_data, dbw_flag, timestamp):
         """Format sensor data for websocket transmission"""
         data = {
-            'timestamp': timestamp,
-            'sensor_id': self.current_sensor_id
+            'timestamp': timestamp
         }
         
         if dbw_flag:
@@ -253,8 +248,8 @@ class SensorMonitor:
         if (self.user_cache is None or self.session_cache is None or
                 current_time - self.last_cache_update > self.cache_ttl):
             try:
-                user = baseuser.objects.get(id=self.user_id)
-                session = protosession.objects.filter(user=user, is_active=True).first()
+                user = BaseUser.objects.get(id=self.user_id)
+                session = ProtoSession.objects.filter(user=user, is_active=True).first()
                 
                 if session:
                     self.user_cache = user
@@ -264,7 +259,7 @@ class SensorMonitor:
                 else:
                     logger.error(f"No active sensor session found for user {self.user_id}")
                     return None, None
-            except baseuser.DoesNotExist:
+            except BaseUser.DoesNotExist:
                 logger.error(f"User with ID {self.user_id} does not exist")
                 return None, None
             except Exception as e:
@@ -276,7 +271,7 @@ class SensorMonitor:
 
     @sync_to_async
     def _bulk_create_sensor_data(self, data_points, session):
-        """Bulk create sensordata objects"""
+        """Bulk create SensorData objects"""
         # Check if we're in shutdown mode
         if self.stop_event.is_set():
             return 0
@@ -284,26 +279,27 @@ class SensorMonitor:
         try:
             with transaction.atomic():
                 sensor_data_objects = [
-                    sensordata(
-                        acc_x=data['data'].get('acc_x', 0.0),
-                        acc_y=data['data'].get('acc_y', 0.0),
-                        acc_z=data['data'].get('acc_z', 0.0),
-                        pitch=data['data'].get('pitch', 0.0),
-                        roll=data['data'].get('roll', 0.0),
-                        gewicht_N=data['data'].get('gewicht_N', 0.0),
-                        touch_status=data['data'].get('touch_status', 0),
-                        griffhoehe=data['data'].get('griffhoehe', 0.0),
-                        sensor_id=data.get('sensor_id', 'sensor_1'),
+                    SensorData(
+                        # Arduino A2 data
+                        gewicht_A2=data['data'].get('gewicht_A2', 0.0),
+                        touchstatus_A2=data['data'].get('touchstatus_A2', 0),
+                        griffhoehe_A2=data['data'].get('griffhoehe_A2', 0.0),
+                        # Arduino A3 data
+                        gewicht_A3=data['data'].get('gewicht_A3', 0.0),
+                        touchstatus_A3=data['data'].get('touchstatus_A3', 0),
+                        griffhoehe_A3=data['data'].get('griffhoehe_A3', 0.0),
+                        # Metadata
+                        sensor_id='both',  # Both sensors are always recorded
                         session=session,
                         timestamp=timezone.now()
                     ) for data in data_points
                 ]
                 
                 # Use bulk_create for efficiency
-                created = sensordata.objects.bulk_create(sensor_data_objects)
+                created = SensorData.objects.bulk_create(sensor_data_objects)
                 return len(created)
         except Exception as e:
-            logger.error(f"Error bulk creating sensordata: {e}")
+            logger.error(f"Error bulk creating SensorData: {e}")
             return 0
 
     async def write_buffered_data_to_db(self):
@@ -370,13 +366,6 @@ class SensorMonitor:
         self.logging_bool = False
         logger.info("Sensor logging disabled")
 
-    def set_sensor_id(self, sensor_id):
-        """Set the current sensor ID for dual sensor support"""
-        if sensor_id in self.sensor_ids:
-            self.current_sensor_id = sensor_id
-            logger.info(f"Switched to sensor ID: {sensor_id}")
-        else:
-            logger.warning(f"Invalid sensor ID: {sensor_id}. Valid IDs: {self.sensor_ids}")
 
     def get_current_sensor_data(self):
         """Get a copy of current sensor data"""

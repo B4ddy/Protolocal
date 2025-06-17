@@ -5,7 +5,7 @@ from collections import deque
 from django.utils import timezone
 from django.db import transaction
 
-from ..models import protodata, baseuser, protosession
+from ..models import ProtoData, BaseUser, ProtoSession
 from asgiref.sync import sync_to_async
 
 logger = logging.getLogger(__name__)
@@ -257,8 +257,8 @@ class MotorMonitor:
         if (self.user_cache is None or self.session_cache is None or
                 current_time - self.last_cache_update > self.cache_ttl):
             try:
-                user = baseuser.objects.get(id=self.user_id)
-                session = protosession.objects.filter(user=user, is_active=True).first()
+                user = BaseUser.objects.get(id=self.user_id)
+                session = ProtoSession.objects.filter(user=user, is_active=True).first()
 
                 if session:
                     self.user_cache = user
@@ -268,7 +268,7 @@ class MotorMonitor:
                 else:
                     logger.error(f"No active session found for user {self.user_id}")
                     return None, None
-            except baseuser.DoesNotExist:
+            except BaseUser.DoesNotExist:
                 logger.error(f"User with ID {self.user_id} does not exist")
                 return None, None
             except Exception as e:
@@ -280,7 +280,7 @@ class MotorMonitor:
 
     @sync_to_async
     def _bulk_create_proto_data(self, data_points, session):
-        """Bulk create protodata objects"""
+        """Bulk create ProtoData objects"""
         # Check if we're in shutdown mode
         if self.stop_event.is_set():
             return 0
@@ -288,7 +288,7 @@ class MotorMonitor:
         try:
             with transaction.atomic():
                 proto_data_objects = [
-                    protodata(
+                    ProtoData(
                         actual_position=data.get("476201", 0),
                         actual_velocity=data.get("4a0402", 0),
                         phase_current=data.get("426201", 0),
@@ -300,10 +300,10 @@ class MotorMonitor:
                 ]
 
                 # Use bulk_create for efficiency
-                created = protodata.objects.bulk_create(proto_data_objects)
+                created = ProtoData.objects.bulk_create(proto_data_objects)
                 return len(created)
         except Exception as e:
-            logger.error(f"Error bulk creating protodata: {e}")
+            logger.error(f"Error bulk creating ProtoData: {e}")
             return 0
 
     async def write_buffered_data_to_db(self):

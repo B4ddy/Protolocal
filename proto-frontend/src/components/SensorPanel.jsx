@@ -4,15 +4,14 @@ import useWebSocket, { ReadyState } from "react-use-websocket";
 const SensorPanel = ({ currentUserID, currentSession, isLogging }) => {
     // Sensor data states
     const [sensorData, setSensorData] = useState({
-        acc_x: 0,
-        acc_y: 0,
-        acc_z: 0,
-        pitch: 0,
-        roll: 0,
-        gewicht_N: 0,
-        touch_status: 0,
-        griffhoehe: 0,
-        sensor_id: 'sensor_1'
+        // Arduino A2 sensor data
+        gewicht_A2: 0,
+        touchstatus_A2: 0,
+        griffhoehe_A2: 0,
+        // Arduino A3 sensor data
+        gewicht_A3: 0,
+        touchstatus_A3: 0,
+        griffhoehe_A3: 0
     });
     
     const [sensorConnectionStatus, setSensorConnectionStatus] = useState("Disconnected");
@@ -64,10 +63,13 @@ const SensorPanel = ({ currentUserID, currentSession, isLogging }) => {
         setSensorConnectionStatus(sensorConnectionStatusText);
     }, [sensorReadyState]);
 
-    // Auto-start sensor logging when motor session is active
+    // Auto-start sensor logging only when motor session is active (for database tracking)
     useEffect(() => {
         if (currentSession !== "-" && isLogging && !sensorLogging && sensorConnectionStatus === "Connected") {
             startSensorLogging();
+        } else if (currentSession === "-" && sensorLogging) {
+            // Stop database logging when session ends, but keep displaying sensor data
+            stopSensorLogging();
         }
     }, [currentSession, isLogging, sensorConnectionStatus]);
 
@@ -86,13 +88,6 @@ const SensorPanel = ({ currentUserID, currentSession, isLogging }) => {
         setSensorLogging(false);
     };
 
-    const switchSensor = () => {
-        const newSensorId = sensorData.sensor_id === 'sensor_1' ? 'sensor_2' : 'sensor_1';
-        sendSensorMessage(JSON.stringify({
-            type: 'switch_sensor',
-            sensor_id: newSensorId
-        }));
-    };
 
     return (
         <div className="sensor-panel">
@@ -104,67 +99,53 @@ const SensorPanel = ({ currentUserID, currentSession, isLogging }) => {
                         <span className="sensor-status-text">{sensorConnectionStatus}</span>
                     </div>
                 </div>
-                <div className="sensor-controls">
-                    <button 
-                        className="sensor-switch-btn"
-                        onClick={switchSensor}
-                        disabled={sensorConnectionStatus !== "Connected"}
-                    >
-                        {sensorData.sensor_id}
-                    </button>
-                </div>
             </div>
             
             <div className="sensor-metrics">
-                {/* Accelerometer Data */}
+                {/* Arduino A2 Sensor Data */}
                 <div className="sensor-group">
-                    <div className="sensor-group-title">Accelerometer (m/s²)</div>
+                    <div className="sensor-group-title">Arduino A2 (0x08)</div>
                     <div className="sensor-values">
                         <div className="sensor-metric">
-                            <span className="sensor-label">X:</span>
-                            <span className="sensor-value">{sensorData.acc_x?.toFixed(2) || "—"}</span>
-                        </div>
-                        <div className="sensor-metric">
-                            <span className="sensor-label">Y:</span>
-                            <span className="sensor-value">{sensorData.acc_y?.toFixed(2) || "—"}</span>
-                        </div>
-                        <div className="sensor-metric">
-                            <span className="sensor-label">Z:</span>
-                            <span className="sensor-value">{sensorData.acc_z?.toFixed(2) || "—"}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Orientation Data */}
-                <div className="sensor-group">
-                    <div className="sensor-group-title">Orientation (°)</div>
-                    <div className="sensor-values">
-                        <div className="sensor-metric">
-                            <span className="sensor-label">Pitch:</span>
-                            <span className="sensor-value">{sensorData.pitch?.toFixed(1) || "—"}</span>
-                        </div>
-                        <div className="sensor-metric">
-                            <span className="sensor-label">Roll:</span>
-                            <span className="sensor-value">{sensorData.roll?.toFixed(1) || "—"}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Force & Touch Data */}
-                <div className="sensor-group">
-                    <div className="sensor-group-title">Force & Touch</div>
-                    <div className="sensor-values">
-                        <div className="sensor-metric">
-                            <span className="sensor-label">Force:</span>
-                            <span className="sensor-value">{sensorData.gewicht_N?.toFixed(1) || "—"} N</span>
-                        </div>
-                        <div className="sensor-metric">
-                            <span className="sensor-label">Height:</span>
-                            <span className="sensor-value">{sensorData.griffhoehe?.toFixed(1) || "—"} cm</span>
+                            <span className="sensor-label">Weight:</span>
+                            <span className="sensor-value">{sensorData.gewicht_A2?.toFixed(2) || "—"} N</span>
                         </div>
                         <div className="sensor-metric">
                             <span className="sensor-label">Touch:</span>
-                            <span className="sensor-value">{sensorData.touch_status || "—"}</span>
+                            <span className="sensor-value">
+                                {sensorData.touchstatus_A2 !== undefined ?
+                                    `${sensorData.touchstatus_A2} (${sensorData.touchstatus_A2.toString(2).padStart(12, '0')})` :
+                                    "—"
+                                }
+                            </span>
+                        </div>
+                        <div className="sensor-metric">
+                            <span className="sensor-label">Grip Height:</span>
+                            <span className="sensor-value">{sensorData.griffhoehe_A2?.toFixed(1) || "—"} cm</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Arduino A3 Sensor Data */}
+                <div className="sensor-group">
+                    <div className="sensor-group-title">Arduino A3 (0x10)</div>
+                    <div className="sensor-values">
+                        <div className="sensor-metric">
+                            <span className="sensor-label">Weight:</span>
+                            <span className="sensor-value">{sensorData.gewicht_A3?.toFixed(2) || "—"} N</span>
+                        </div>
+                        <div className="sensor-metric">
+                            <span className="sensor-label">Touch:</span>
+                            <span className="sensor-value">
+                                {sensorData.touchstatus_A3 !== undefined ?
+                                    `${sensorData.touchstatus_A3} (${sensorData.touchstatus_A3.toString(2).padStart(12, '0')})` :
+                                    "—"
+                                }
+                            </span>
+                        </div>
+                        <div className="sensor-metric">
+                            <span className="sensor-label">Grip Height:</span>
+                            <span className="sensor-value">{sensorData.griffhoehe_A3?.toFixed(1) || "—"} cm</span>
                         </div>
                     </div>
                 </div>

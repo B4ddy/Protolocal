@@ -1,11 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import baseuser, motorsession
+from .models import BaseUser, motorsession
 
 # Register User model
 class CustomUserAdmin(UserAdmin):
-    model = baseuser
-admin.site.register(baseuser, CustomUserAdmin)
+    model = BaseUser
+admin.site.register(BaseUser, CustomUserAdmin)
 
 # Register motorsession model with appropriate admin class
 class MotorSessionAdmin(admin.ModelAdmin):

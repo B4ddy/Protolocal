@@ -232,14 +232,12 @@ const MotorControl = () => {
                     <div className="metric-card"> <div className="metric-title">Temperatur</div><div className="metric-value">N{cardtemp || "—"} M{temp || "—"}</div></div>
                 </div>
                 
-                {/* Sensor Panel - only show when session is active */}
-                {currentSession !== "-" && (
-                    <SensorPanel
-                        currentUserID={currentUserID}
-                        currentSession={currentSession}
-                        isLogging={isLogging}
-                    />
-                )}
+                {/* Sensor Panel - always show */}
+                <SensorPanel
+                    currentUserID={currentUserID}
+                    currentSession={currentSession}
+                    isLogging={isLogging}
+                />
                 <div className="visualization-panel">
 
 

@@ -202,7 +202,7 @@ SIMPLE_JWT = {
      'BLACKLIST_AFTER_ROTATION': True
 }
 
-AUTH_USER_MODEL = "chat.baseUser"
+AUTH_USER_MODEL = "chat.BaseUser"
 
 
 GRAPH_MODELS = {

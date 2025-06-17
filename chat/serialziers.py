@@ -3,24 +3,23 @@ from rest_framework import serializers
 from .models import *
 
 
-class protoDataSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = protodata
-        fields = ["actual_position", "actual_velocity",
-                  "phase_current", "voltage_logic", "time"]
-
-
 class ProtoDataSerializer(serializers.ModelSerializer):
     class Meta:
-        model = protodata
-        fields = '__all__'  # Serialize all fields in the protodata model
+        model = ProtoData
+        fields = ["actual_position", "actual_velocity",
+                  "phase_current", "voltage_logic", "timestamp"]
+
+
+class ProtoDataFullSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProtoData
+        fields = '__all__'  # Serialize all fields in the ProtoData model
 
 
 class BaseUserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = baseuser
-        fields = '__all__'  # Serialize all fields in the baseuser mod
+        model = BaseUser
+        fields = '__all__'  # Serialize all fields in the BaseUser model
 
 
 
@@ -41,15 +40,15 @@ class UserSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True) # Important:  Should be read-only
 
     class Meta:
-        model = baseuser
+        model = BaseUser
         fields = ["username","height","oberschenkellänge","unterschenkel","schuhgröße","oberkörper",
                   "armlänge","gewicht","geburtsdatum","geschlecht","sessioncount","rollstuhl","id"]
 
     def create(self, validated_data):
-        user = baseuser.objects.create_user(**validated_data)
+        user = BaseUser.objects.create_user(**validated_data)
         return user
    
 class SessionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = motorsession
+        model = ProtoSession
         fields = '__all__'  # Serialize all fields in the Session model

@@ -8,8 +8,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.http import JsonResponse, HttpResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.decorators import authentication_classes
-from .serialziers import SessionSerializer, UserSerializer, protoDataSerializer
-from .models import protodata, baseuser, protosession, sensordata
+from .serialziers import SessionSerializer, UserSerializer, ProtoDataSerializer
+from .models import ProtoData, BaseUser, ProtoSession, SensorData
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -48,11 +48,11 @@ def token_default(request):
     })
 
 def userkeys(request):
-    baseuser = get_user_model()
+    BaseUser = get_user_model()
     username = request.GET.get('username')
     if not username:
         return JsonResponse({'error': 'Username is required'}, status=400)
-    currentuser= get_object_or_404(baseuser, username=username)
+    currentuser= get_object_or_404(BaseUser, username=username)
     refresh = RefreshToken.for_user(currentuser)
     username= currentuser.get_username()
     return JsonResponse({
@@ -88,8 +88,8 @@ def create_proto_data(request):
             phase_current = int(request.GET.get('phase_current'))
             voltage_logic = int(request.GET.get('voltage_logic'))
             
-            # Create a new protodata instance
-            proto_data = protodata(
+            # Create a new ProtoData instance
+            proto_data = ProtoData(
                 actual_position=actual_position,
                 actual_velocity=actual_velocity,
                 phase_current=phase_current,
@@ -115,14 +115,7 @@ def create_proto_data(request):
     else:
         return HttpResponse("not a Post")
     
-# '    
-# @api_view(["GET"])    
-# @csrf_exempt
-# @permission_classes([AllowAny])       
-# def get_users(request):
-#     users = baseuser.objects.all()
-#     serializer = UserSerializer(users, many=True)  # Konvertiert QuerySet in JSON
-#     return Response(serializer.data)'
+# Legacy commented code removed - users are now handled by Get_User class
 
 import logging
 logger = logging.getLogger(__name__)
@@ -133,7 +126,7 @@ class Get_User(APIView):
     def get(self, request):
         logger.info("Get_User endpoint called")
         try:
-            users = baseuser.objects.all()
+            users = BaseUser.objects.all()
             logger.info(f"Retrieved {users.count()} users")
             serializer = UserSerializer(users, many=True)
             return Response(serializer.data)
@@ -157,12 +150,12 @@ class StartSessionView(APIView):
 
     def post(self, request):
         
-        session = protosession.objects.filter(user=request.user, is_active=True).first()
+        session = ProtoSession.objects.filter(user=request.user, is_active=True).first()
         if not session:
-            session = protosession.objects.create(user=request.user)
+            session = ProtoSession.objects.create(user=request.user)
             return Response({"session_id": session.id}, status=status.HTTP_201_CREATED)
         else:
-            session = protosession.objects.create(user=request.user)
+            session = ProtoSession.objects.create(user=request.user)
             return Response({"session_id": session.id,"message": "closed old session(s)"}, status=status.HTTP_201_CREATED)
         
 class StopSessionView(APIView):
@@ -170,7 +163,7 @@ class StopSessionView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, session_id):
-        session = protosession.objects.filter(id=session_id, user=request.user, is_active=True).first()
+        session = ProtoSession.objects.filter(id=session_id, user=request.user, is_active=True).first()
         if not session:
             return Response({"error": "Session not found or already ended"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -194,7 +187,7 @@ class GetActiveSessionView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        session = protosession.objects.filter(user=request.user, is_active=True).first()
+        session = ProtoSession.objects.filter(user=request.user, is_active=True).first()
         serializer = SessionSerializer(session)
         if session:
             return Response(serializer.data)
@@ -207,23 +200,23 @@ class GetSessionView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        sessions = protosession.objects.filter(user=request.user)
+        sessions = ProtoSession.objects.filter(user=request.user)
         serializer = SessionSerializer(sessions, many=True)
         return Response(serializer.data)
     
 
 
-class MotorDataView(APIView):  #creates protodata
+class MotorDataView(APIView):  #creates ProtoData
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request, session_id):
-        session = protosession.objects.filter(id=session_id, user=request.user, is_active=True).first()
+        session = ProtoSession.objects.filter(id=session_id, user=request.user, is_active=True).first()
         if not session:
             return Response({"error": "Invalid session"}, status=status.HTTP_400_BAD_REQUEST)
 
         data_value = request.data.get("value")
-        protodata.objects.create(session=session, value=data_value)
+        ProtoData.objects.create(session=session, value=data_value)
 
         return Response({"message": "Data recorded"}, status=status.HTTP_201_CREATED)
     
@@ -235,12 +228,12 @@ class GetSessionDataView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request, session_id):
-        session = protosession.objects.filter(id=session_id, user=request.user).first()
+        session = ProtoSession.objects.filter(id=session_id, user=request.user).first()
         if not session:
             return Response({"error": "Invalid session"}, status=status.HTTP_400_BAD_REQUEST)
         
-        data = protodata.objects.filter(session=session)
-        serializer = protoDataSerializer(data, many=True)
+        data = ProtoData.objects.filter(session=session)
+        serializer = ProtoDataSerializer(data, many=True)
         return Response(serializer.data)
     
 
@@ -287,12 +280,12 @@ class StartSensorSessionView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        session = protosession.objects.filter(user=request.user, is_active=True).first()
+        session = ProtoSession.objects.filter(user=request.user, is_active=True).first()
         if not session:
-            session = protosession.objects.create(user=request.user)
+            session = ProtoSession.objects.create(user=request.user)
             return Response({"session_id": session.id}, status=status.HTTP_201_CREATED)
         else:
-            session = protosession.objects.create(user=request.user)
+            session = ProtoSession.objects.create(user=request.user)
             return Response({"session_id": session.id, "message": "closed old session(s)"}, status=status.HTTP_201_CREATED)
 
 
@@ -301,7 +294,7 @@ class StopSensorSessionView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, session_id):
-        session = protosession.objects.filter(id=session_id, user=request.user, is_active=True).first()
+        session = ProtoSession.objects.filter(id=session_id, user=request.user, is_active=True).first()
         if not session:
             return Response({"error": "Sensor session not found or already ended"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -314,7 +307,7 @@ class GetActiveSensorSessionView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        session = protosession.objects.filter(user=request.user, is_active=True).first()
+        session = ProtoSession.objects.filter(user=request.user, is_active=True).first()
         if session:
             return Response({
                 "session_id": session.id,
@@ -330,7 +323,7 @@ class GetSensorSessionView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        sessions = protosession.objects.filter(user=request.user)
+        sessions = ProtoSession.objects.filter(user=request.user)
         session_data = [{
             "session_id": session.id,
             "start_time": session.start_time,
@@ -345,11 +338,11 @@ class GetSensorSessionDataView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request, session_id):
-        session = protosession.objects.filter(id=session_id, user=request.user).first()
+        session = ProtoSession.objects.filter(id=session_id, user=request.user).first()
         if not session:
             return Response({"error": "Invalid sensor session"}, status=status.HTTP_400_BAD_REQUEST)
         
-        data = sensordata.objects.filter(session=session)
+        data = SensorData.objects.filter(session=session)
         sensor_data = [{
             "id": item.id,
             "acc_x": item.acc_x,

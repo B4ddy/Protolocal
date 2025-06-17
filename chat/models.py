@@ -4,7 +4,7 @@ from django.contrib.auth.models import AbstractUser
 from django.conf import settings  # Import settings for lazy user reference
 
 
-class baseuser(AbstractUser):
+class BaseUser(AbstractUser):
     
     class Genders(models.TextChoices):
         MANN = 'MANN', 'MANN'
@@ -37,7 +37,7 @@ class baseuser(AbstractUser):
         blank=True
     )
 
-class protosession(models.Model):
+class ProtoSession(models.Model):
     """Unified session for both motor and sensor data"""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     start_time = models.DateTimeField(auto_now_add=True)
@@ -51,7 +51,7 @@ class protosession(models.Model):
         
     def save(self, *args, **kwargs):
         if self.is_active:
-            protosession.objects.filter(user=self.user, is_active=True).update(is_active=False, end_time=datetime.now())
+            ProtoSession.objects.filter(user=self.user, is_active=True).update(is_active=False, end_time=datetime.now())
         super().save(*args, **kwargs)
 
     class Meta:
@@ -60,11 +60,11 @@ class protosession(models.Model):
 
 
 # Keep motorsession as alias for backward compatibility
-motorsession = protosession
+motorsession = ProtoSession
 
 
-class protodata(models.Model):
-    session = models.ForeignKey(protosession, on_delete=models.CASCADE, null=True, blank=True)
+class ProtoData(models.Model):
+    session = models.ForeignKey(ProtoSession, on_delete=models.CASCADE, null=True, blank=True)
     actual_position = models.IntegerField()
     actual_velocity = models.IntegerField()
     phase_current = models.IntegerField()
@@ -77,24 +77,34 @@ class protodata(models.Model):
         ]
 
 
-class sensordata(models.Model):
-    session = models.ForeignKey(protosession, on_delete=models.CASCADE, null=True, blank=True)
-    # MPU6050 data (accelerometer and gyroscope)
-    acc_x = models.FloatField()  # Acceleration X-axis in m/s²
-    acc_y = models.FloatField()  # Acceleration Y-axis in m/s²
-    acc_z = models.FloatField()  # Acceleration Z-axis in m/s²
-    pitch = models.FloatField()  # Pitch angle in degrees
-    roll = models.FloatField()   # Roll angle in degrees
+class SensorData(models.Model):
+    session = models.ForeignKey(ProtoSession, on_delete=models.CASCADE, null=True, blank=True)
+    # MPU6050 data (accelerometer and gyroscope) - Legacy sensors
+    acc_x = models.FloatField(default=0.0)  # Acceleration X-axis in m/s²
+    acc_y = models.FloatField(default=0.0)  # Acceleration Y-axis in m/s²
+    acc_z = models.FloatField(default=0.0)  # Acceleration Z-axis in m/s²
+    pitch = models.FloatField(default=0.0)  # Pitch angle in degrees
+    roll = models.FloatField(default=0.0)   # Roll angle in degrees
     
-    # HX711 + MPR121 data
-    gewicht_N = models.FloatField()      # Weight/force in Newtons
-    touch_status = models.IntegerField()  # Touch sensor status
-    griffhoehe = models.FloatField()     # Grip height in cm
+    # HX711 + MPR121 data - Legacy sensors
+    gewicht_N = models.FloatField(default=0.0)      # Weight/force in Newtons
+    touch_status = models.IntegerField(default=0)    # Touch sensor status
+    griffhoehe = models.FloatField(default=0.0)     # Grip height in cm
+    
+    # New Arduino A2 sensor data
+    gewicht_A2 = models.FloatField(default=0.0)      # Weight/force from Arduino A2 in Newtons
+    touchstatus_A2 = models.IntegerField(default=0)  # Touch sensor status from Arduino A2
+    griffhoehe_A2 = models.FloatField(default=0.0)   # Grip height from Arduino A2 in cm
+    
+    # New Arduino A3 sensor data
+    gewicht_A3 = models.FloatField(default=0.0)      # Weight/force from Arduino A3 in Newtons
+    touchstatus_A3 = models.IntegerField(default=0)  # Touch sensor status from Arduino A3
+    griffhoehe_A3 = models.FloatField(default=0.0)   # Grip height from Arduino A3 in cm
     
     # Sensor identifier (for when sensors exist twice per sensor)
     sensor_id = models.CharField(max_length=50, default='sensor_1')
     
-    timestamp = models.DateTimeField(auto_now_add=True)  # Synchronized timestamp with protodata
+    timestamp = models.DateTimeField(auto_now_add=True)  # Synchronized timestamp with ProtoData
     
     class Meta:
         indexes = [
@@ -104,6 +114,6 @@ class sensordata(models.Model):
 
 
 # Keep sensorsession as alias for backward compatibility
-sensorsession = protosession
+sensorsession = ProtoSession
 
     
